@@ -1,5 +1,5 @@
-# Use an official Python runtime as a parent image
-FROM python:3.11-slim-bullseye
+# Use an official Python runtime as a parent image (Debian 12 Bookworm)
+FROM python:3.11-slim-bookworm
 
 # Set the working directory in the container
 WORKDIR /MoneyPrinterTurbo

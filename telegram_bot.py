@@ -44,10 +44,10 @@ def get_auto_lock_minutes() -> int:
     cfg = getattr(config, "telegram", {})
     if isinstance(cfg, dict):
         try:
-            return int(cfg.get("auto_lock_minutes", 30))
+            return int(cfg.get("auto_lock_minutes", 2))
         except (ValueError, TypeError):
-            return 30
-    return 30
+            return 2
+    return 2
 
 
 def get_bot_token() -> str:
@@ -580,7 +580,7 @@ def run_bot():
                 # Auto-lock check for authenticated users
                 now = time.time()
                 mins = get_auto_lock_minutes()
-                if chat_id in authenticated_users and mins > 0:
+                if chat_id in authenticated_users and mins > 0 and not is_generating:
                     last_t = last_activity.get(chat_id, 0)
                     if last_t and (now - last_t >= mins * 60):
                         authenticated_users.discard(chat_id)

@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: moneyprinter-turbo
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: DOCKER_BUILD_MIRROR
+        value: default
+      - key: PIP_USE_OFFICIAL
+        value: "1"

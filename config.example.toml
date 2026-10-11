@@ -6,7 +6,7 @@ listen_port = 8080
 [app]
 hide_config = false
 llm_provider = "gemini"
-gemini_model_name = "gemini-2.5-flash"
+gemini_model_name = "gemini-3.8-flash"
 gemini_api_key = "YOUR_GEMINI_API_KEY"
 video_source = "pexels"
 pexels_api_keys = ["YOUR_PEXELS_API_KEY"]

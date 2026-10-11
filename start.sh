@@ -20,11 +20,11 @@ if os.path.exists("config.toml"):
     try:
         cfg = toml.load("config.toml")
         cfg.setdefault("app", {})["llm_provider"] = "gemini"
-        cfg.setdefault("app", {})["gemini_model_name"] = "gemini-2.5-flash"
+        cfg.setdefault("app", {})["gemini_model_name"] = "gemini-3.8-flash"
         if os.environ.get("GEMINI_API_KEY"):
             cfg.setdefault("app", {})["gemini_api_key"] = os.environ["GEMINI_API_KEY"]
             cfg["app"]["llm_provider"] = "gemini"
-            cfg["app"]["gemini_model_name"] = os.environ.get("GEMINI_MODEL_NAME", "gemini-2.5-flash")
+            cfg["app"]["gemini_model_name"] = os.environ.get("GEMINI_MODEL_NAME", "gemini-3.8-flash")
         if os.environ.get("PEXELS_API_KEY"):
             cfg.setdefault("app", {})["pexels_api_keys"] = [os.environ["PEXELS_API_KEY"]]
         if os.environ.get("TELEGRAM_BOT_TOKEN"):

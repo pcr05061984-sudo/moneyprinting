@@ -380,7 +380,10 @@ def _generate_response(prompt: str, app_config=None) -> str:
             from google import genai
             from google.genai import types
 
-            http_options = types.HttpOptions(base_url=base_url) if base_url else None
+            http_options = types.HttpOptions(
+                base_url=base_url if base_url else None,
+                timeout=30000,
+            )
             generation_config = types.GenerateContentConfig(
                 temperature=0.5,
                 top_p=1,
@@ -408,9 +411,10 @@ def _generate_response(prompt: str, app_config=None) -> str:
 
             models_to_try = [model_name] if model_name else []
             for candidate in (
+                "gemini-3.8-flash",
                 "gemini-2.5-flash",
                 "gemini-flash-latest",
-                "gemini-3.8-flash",
+                "gemini-3.5-flash",
                 "gemini-2.5-flash-lite",
                 "gemini-flash-lite-latest",
                 "gemini-3-flash-preview",

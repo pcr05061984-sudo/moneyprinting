@@ -554,9 +554,26 @@ def save_config_update(section: str, key: str, value: str) -> bool:
         return False
 
 
+def render_keepalive_watchdog():
+    """Pings external Render URL every 10 minutes so Render free tier never spins down to sleep."""
+    render_url = os.getenv("RENDER_EXTERNAL_URL", "https://moneyprinting-xych.onrender.com")
+    health_endpoint = f"{render_url.rstrip('/')}/health"
+    logger.info(f"🌐 Keep-Alive Watchdog active: Pinging {health_endpoint} every 10 minutes...")
+    time.sleep(120)
+    while True:
+        try:
+            r = requests.get(health_endpoint, timeout=15)
+            logger.debug(f"Keep-alive ping to {health_endpoint}: status {r.status_code}")
+        except Exception as e:
+            logger.debug(f"Keep-alive ping: {e}")
+        time.sleep(600)
+
+
 def run_bot():
     token = get_bot_token()
     logger.info("🤖 Starting VIP Telegram Controller for Jayant Regar...")
+    # Start keep-alive watchdog to prevent Render sleep
+    threading.Thread(target=render_keepalive_watchdog, daemon=True).start()
     # Start auto-lock watchdog thread
     threading.Thread(target=auto_lock_watchdog, daemon=True).start()
     # Start 24/7 Daily Autopilot Scheduler (100% Hands-Free)

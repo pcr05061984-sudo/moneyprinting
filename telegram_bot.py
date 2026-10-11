@@ -44,10 +44,10 @@ def get_auto_lock_minutes() -> int:
     cfg = getattr(config, "telegram", {})
     if isinstance(cfg, dict):
         try:
-            return int(cfg.get("auto_lock_minutes", 5))
+            return int(cfg.get("auto_lock_minutes", 30))
         except (ValueError, TypeError):
-            return 5
-    return 5
+            return 30
+    return 30
 
 
 def get_bot_token() -> str:
@@ -72,7 +72,10 @@ def auto_lock_watchdog():
         try:
             now = time.time()
             mins = get_auto_lock_minutes()
-            if mins > 0:
+            if is_generating:
+                for cid in authenticated_users:
+                    last_activity[cid] = now
+            elif mins > 0:
                 timeout_sec = mins * 60
                 for cid in list(authenticated_users):
                     last_t = last_activity.get(cid, 0)

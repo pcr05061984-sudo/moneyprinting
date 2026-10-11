@@ -271,11 +271,12 @@ def get_application() -> FastAPI:
 
     @instance.get("/health")
     async def health_check():
+        import time
         return {
             "status": "ok",
             "service": "MoneyPrinterTurbo",
             "uptime": "running",
-            "timestamp": utils.get_time()
+            "timestamp": time.time()
         }
 
     return instance

@@ -8,10 +8,13 @@ WORKDIR /MoneyPrinterTurbo
 RUN chmod 777 /MoneyPrinterTurbo
 
 ENV PYTHONPATH="/MoneyPrinterTurbo"
+ENV TZ="Asia/Kolkata"
 
-# Install system dependencies (git, ffmpeg, imagemagick)
+# Install system dependencies (git, ffmpeg, tzdata)
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends git ffmpeg && \
+    apt-get install -y --no-install-recommends git ffmpeg tzdata && \
+    ln -fs /usr/share/zoneinfo/Asia/Kolkata /etc/localtime && \
+    dpkg-reconfigure -f noninteractive tzdata && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy only requirements.txt first to leverage Docker cache

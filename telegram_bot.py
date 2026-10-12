@@ -97,6 +97,8 @@ def auto_lock_watchdog():
 
 
 last_autopilot_slot = None
+IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+last_autopilot_slot = None
 last_growth_report_date = None
 
 
@@ -107,58 +109,80 @@ def get_schedule_times() -> list[str]:
 
 
 def daily_autopilot_scheduler():
-    """Background scheduler that automatically generates and uploads 2 shorts daily (13:00 & 18:00 IST) + 21:00 Growth Report."""
+    """Background scheduler that automatically generates and uploads 2 shorts daily (13:00 & 18:00 IST) + 21:00 Growth Report in Indian Standard Time."""
     global last_autopilot_slot, last_growth_report_date, is_generating
-    logger.info("⏰ Starting Daily 2X Autopilot Scheduler (Slots: 13:00 & 18:00 IST, Report: 21:00 IST)...")
+    logger.info("⏰ Starting Daily 2X Autopilot Scheduler in IST (13:00 & 18:00 IST, Report: 21:00 IST)...")
     while True:
         try:
-            now = datetime.datetime.now()
-            today_str = now.strftime("%Y-%m-%d")
-            sched_times = get_schedule_times()
+            now_ist = datetime.datetime.now(IST)
+            today_str = now_ist.strftime("%Y-%m-%d")
+            chour = now_ist.hour
 
-            # 1. 2X Daily Uploads Slot Check
-            for st in sched_times:
-                try:
-                    shour, smin = map(int, st.split(":"))
-                except Exception:
-                    continue
+            # Slot 1: Dopahar 1:00 PM IST (Window: 13:00 to 17:59 IST)
+            slot1_key = f"{today_str}_slot1_13"
+            if 13 <= chour < 18 and last_autopilot_slot != slot1_key and not is_generating:
+                last_autopilot_slot = slot1_key
+                logger.info(f"🚀 DAILY 2X AUTOPILOT TRIGGERED FOR Slot 1 (1:00 PM IST) on {today_str}!")
+                owner_chat_id = str(config.telegram.get("chat_id", "8047188903"))
+                if owner_chat_id:
+                    send_reply(
+                        owner_chat_id,
+                        f"⏰ <b>DAILY 2X AUTOPILOT TRIGGERED! (Dopahar 1:00 PM IST Slot)</b> 🎬\n\n"
+                        f"Channel: <b>Jayant Talks</b>\n"
+                        f"• Step 1: Picking viral high-retention topic...\n"
+                        f"• Step 2: Generating script & rendering 1080x1920 Short...\n"
+                        f"• Step 3: Direct uploading to YouTube (Public)...\n\n"
+                        f"<i>100% Hands-Free Autopilot — Video live hote hi link yahan bhejta hu!</i>"
+                    )
 
-                slot_key = f"{today_str}_{st}"
-                if now.hour == shour and now.minute == smin and last_autopilot_slot != slot_key and not is_generating:
-                    last_autopilot_slot = slot_key
-                    slot_label = "Dopahar 1:00 PM Slot" if shour == 13 else ("Shaam 6:00 PM Slot" if shour == 18 else f"{st} Slot")
-                    logger.info(f"🚀 DAILY 2X AUTOPILOT TRIGGERED FOR {slot_label} ({st})! Generating & posting short...")
-                    owner_chat_id = str(config.telegram.get("chat_id", "8047188903"))
-                    if owner_chat_id:
-                        send_reply(
-                            owner_chat_id,
-                            f"⏰ <b>DAILY 2X AUTOPILOT TRIGGERED! ({slot_label})</b> 🎬\n\n"
-                            f"Channel: <b>Jayant Talks</b>\n"
-                            f"• Step 1: Picking viral high-retention topic...\n"
-                            f"• Step 2: Generating script & rendering 1080x1920 Short...\n"
-                            f"• Step 3: Direct uploading to YouTube (Public)...\n\n"
-                            f"<i>100% Hands-Free Autopilot — Video live hote hi link yahan bhejta hu!</i>"
-                        )
+                def autopilot_worker_1():
+                    global is_generating
+                    is_generating = True
+                    try:
+                        auto_pipeline.run_pipeline(analyze_channel=True)
+                    except Exception as err:
+                        logger.error(f"Autopilot pipeline error: {err}")
+                    finally:
+                        is_generating = False
 
-                    def autopilot_worker():
-                        global is_generating
-                        is_generating = True
-                        try:
-                            auto_pipeline.run_pipeline(analyze_channel=True)
-                        except Exception as err:
-                            logger.error(f"Autopilot pipeline error: {err}")
-                        finally:
-                            is_generating = False
+                threading.Thread(target=autopilot_worker_1, daemon=True).start()
 
-                    threading.Thread(target=autopilot_worker, daemon=True).start()
+            # Slot 2: Shaam 6:00 PM IST (Window: 18:00 to 23:59 IST)
+            slot2_key = f"{today_str}_slot2_18"
+            if chour >= 18 and last_autopilot_slot != slot2_key and not is_generating:
+                last_autopilot_slot = slot2_key
+                logger.info(f"🚀 DAILY 2X AUTOPILOT TRIGGERED FOR Slot 2 (6:00 PM IST) on {today_str}!")
+                owner_chat_id = str(config.telegram.get("chat_id", "8047188903"))
+                if owner_chat_id:
+                    send_reply(
+                        owner_chat_id,
+                        f"⏰ <b>DAILY 2X AUTOPILOT TRIGGERED! (Shaam 6:00 PM IST Slot)</b> 🎬\n\n"
+                        f"Channel: <b>Jayant Talks</b>\n"
+                        f"• Step 1: Picking viral high-retention topic...\n"
+                        f"• Step 2: Generating script & rendering 1080x1920 Short...\n"
+                        f"• Step 3: Direct uploading to YouTube (Public)...\n\n"
+                        f"<i>100% Hands-Free Autopilot — Video live hote hi link yahan bhejta hu!</i>"
+                    )
 
-            # 2. Daily 9:00 PM Growth Report (21:00 IST)
-            if now.hour == 21 and now.minute == 0 and last_growth_report_date != today_str:
+                def autopilot_worker_2():
+                    global is_generating
+                    is_generating = True
+                    try:
+                        auto_pipeline.run_pipeline(analyze_channel=True)
+                    except Exception as err:
+                        logger.error(f"Autopilot pipeline error: {err}")
+                    finally:
+                        is_generating = False
+
+                threading.Thread(target=autopilot_worker_2, daemon=True).start()
+
+            # Daily 9:00 PM Growth Report (Window: 21:00 to 23:59 IST)
+            if chour >= 21 and last_growth_report_date != today_str:
                 last_growth_report_date = today_str
                 owner_chat_id = str(config.telegram.get("chat_id", "8047188903"))
                 if owner_chat_id:
                     try:
-                        logger.info("📊 Dispatching Daily 9:00 PM Growth Report Card...")
+                        logger.info("📊 Dispatching Daily 9:00 PM Growth Report Card in IST...")
                         analyzer = YouTubeAnalyzer()
                         stats = analyzer.get_channel_overview() if hasattr(analyzer, "get_channel_overview") else {}
                         report_msg = (
@@ -166,7 +190,7 @@ def daily_autopilot_scheduler():
                             "║   📊 <b>DAILY CHANNEL GROWTH REPORT</b>  ║\n"
                             "║   👑 <b>JAYANT TALKS SCORECARD</b>    ║\n"
                             "╚═══════════════════════════════════╝\n\n"
-                            f"📅 <b>Date:</b> {now.strftime('%d %b %Y')} | 09:00 PM IST\n\n"
+                            f"📅 <b>Date:</b> {now_ist.strftime('%d %b %Y')} | 09:00 PM IST\n\n"
                             f"👥 <b>Subscribers:</b> <code>{stats.get('subscribers', 'Active')}</code>\n"
                             f"👁️ <b>Total Views:</b> <code>{stats.get('views', 'Growing')}</code>\n"
                             f"🎬 <b>Total Videos:</b> <code>{stats.get('videos', '2/2 Today')}</code>\n\n"
@@ -225,10 +249,11 @@ def send_reply(
 
 def get_vip_menu():
     return [
-        ["🎬 Generate Video", "📊 Channel Review"],
-        ["🚀 Upload to YouTube", "📁 Download Latest Video"],
-        ["📺 My Channel", "🔑 API Settings"],
-        ["⚙️ Server Status", "🔒 Lock Terminal"]
+        ["🎬 Generate Video", "⚡ Autopilot Now"],
+        ["📊 Channel Review", "🚀 Upload to YouTube"],
+        ["📁 Download Latest Video", "📺 My Channel"],
+        ["🔑 API Settings", "⚙️ Server Status"],
+        ["🔒 Lock Terminal"]
     ]
 
 
@@ -518,7 +543,7 @@ def handle_send_latest(chat_id: str):
 
 
 def handle_server_status(chat_id: str):
-    now_str = datetime.datetime.now().strftime("%I:%M %p | %d %b %Y")
+    now_str = datetime.datetime.now(IST).strftime("%I:%M %p | %d %b %Y IST")
     pin = get_secret_pin()
     auto_lock_mins = get_auto_lock_minutes()
     msg = (
@@ -672,6 +697,29 @@ def run_bot():
                 elif text.startswith("/generate ") or text.startswith("/gen "):
                     custom_topic = text.split(" ", 1)[1].strip()
                     handle_generate(chat_id, custom_topic)
+
+                # 2.1 Autopilot Now (1-Click Instant Autopilot)
+                elif text in ["⚡ Autopilot Now", "/autopilot_now", "/trigger_now"]:
+                    send_reply(
+                        chat_id,
+                        "🚀 <b>1-Click Autopilot Triggered!</b>\n\n"
+                        "Channel: <b>Jayant Talks</b>\n"
+                        "• Step 1: Scanning trending audience topics...\n"
+                        "• Step 2: Generating viral script & HD Short...\n"
+                        "• Step 3: Direct publishing to YouTube...\n\n"
+                        "<i>Process shuru ho chuka hai, render hote hi video aur watch link yahan bhej raha hu!</i>",
+                        keyboard=get_vip_menu()
+                    )
+                    def manual_autopilot_worker():
+                        global is_generating
+                        is_generating = True
+                        try:
+                            auto_pipeline.run_pipeline(analyze_channel=True)
+                        except Exception as ex:
+                            logger.error(f"Manual autopilot trigger error: {ex}")
+                        finally:
+                            is_generating = False
+                    threading.Thread(target=manual_autopilot_worker, daemon=True).start()
 
                 # 3. Upload to YouTube
                 elif text in ["🚀 Upload to YouTube", "/upload", "/publish"]:

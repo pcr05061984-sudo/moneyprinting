@@ -167,12 +167,31 @@ def run_pipeline(
         telegram_notify.notify_status("error", "Video Render Failed", f"Exit code {result.returncode}")
         return None
 
-    # Parse stdout for output file
+    # Parse stdout or disk search for output file
     try:
-        last_line = [line for line in result.stdout.strip().split("\n") if line.strip().startswith("{")][-1]
-        task_data = json.loads(last_line)
-        rendered_video = task_data["result"]["videos"][0]
-        
+        rendered_video = None
+        # Option A: parse JSON from stdout
+        lines = [line.strip() for line in result.stdout.strip().split("\n") if line.strip().startswith("{")]
+        if lines:
+            try:
+                task_data = json.loads(lines[-1])
+                vids = task_data.get("result", {}).get("videos", [])
+                if vids:
+                    rendered_video = vids[0]
+            except Exception as pe:
+                logger.warning(f"Failed to parse task JSON from stdout: {pe}")
+
+        # Option B: Fallback - disk search in storage/tasks for newest final-1.mp4
+        if not rendered_video or not Path(rendered_video).exists():
+            candidates = list(Path("storage/tasks").glob("*/final-1.mp4"))
+            if candidates:
+                candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+                rendered_video = str(candidates[0])
+                logger.info(f"Discovered rendered video via disk search: {rendered_video}")
+
+        if not rendered_video or not Path(rendered_video).exists():
+            raise FileNotFoundError("Rendered video file not found in stdout or storage/tasks!")
+
         # Copy to production folder
         import shutil
         prod_video = target_dir / "final_video.mp4"

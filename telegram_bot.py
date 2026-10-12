@@ -96,10 +96,53 @@ def auto_lock_watchdog():
         time.sleep(5)
 
 
-last_autopilot_slot = None
 IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
-last_autopilot_slot = None
-last_growth_report_date = None
+STATE_FILE = Path("storage/autopilot_state.json")
+
+
+def load_autopilot_state() -> dict:
+    if STATE_FILE.exists():
+        try:
+            with open(STATE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.warning(f"Failed to read autopilot state: {e}")
+    return {"completed_slots": ["2026-10-12_slot1_13"], "last_growth_report_date": None}
+
+
+def save_autopilot_state(state: dict):
+    try:
+        STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2)
+    except Exception as e:
+        logger.warning(f"Failed to save autopilot state: {e}")
+
+
+def mark_autopilot_slot_completed(slot_key: str):
+    state = load_autopilot_state()
+    slots = set(state.get("completed_slots", []))
+    slots.add(slot_key)
+    state["completed_slots"] = list(slots)
+    state["last_updated"] = datetime.datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S IST")
+    save_autopilot_state(state)
+
+
+def is_autopilot_slot_completed(slot_key: str) -> bool:
+    state = load_autopilot_state()
+    return slot_key in state.get("completed_slots", [])
+
+
+def mark_growth_report_completed(report_date: str):
+    state = load_autopilot_state()
+    state["last_growth_report_date"] = report_date
+    state["last_updated"] = datetime.datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S IST")
+    save_autopilot_state(state)
+
+
+def is_growth_report_completed(report_date: str) -> bool:
+    state = load_autopilot_state()
+    return state.get("last_growth_report_date") == report_date
 
 
 def get_schedule_times() -> list[str]:
@@ -110,7 +153,7 @@ def get_schedule_times() -> list[str]:
 
 def daily_autopilot_scheduler():
     """Background scheduler that automatically generates and uploads 2 shorts daily (13:00 & 18:00 IST) + 21:00 Growth Report in Indian Standard Time."""
-    global last_autopilot_slot, last_growth_report_date, is_generating
+    global is_generating
     logger.info("⏰ Starting Daily 2X Autopilot Scheduler in IST (13:00 & 18:00 IST, Report: 21:00 IST)...")
     while True:
         try:
@@ -120,8 +163,8 @@ def daily_autopilot_scheduler():
 
             # Slot 1: Dopahar 1:00 PM IST (Window: 13:00 to 17:59 IST)
             slot1_key = f"{today_str}_slot1_13"
-            if 13 <= chour < 18 and last_autopilot_slot != slot1_key and not is_generating:
-                last_autopilot_slot = slot1_key
+            if 13 <= chour < 18 and not is_autopilot_slot_completed(slot1_key) and not is_generating:
+                mark_autopilot_slot_completed(slot1_key)
                 logger.info(f"🚀 DAILY 2X AUTOPILOT TRIGGERED FOR Slot 1 (1:00 PM IST) on {today_str}!")
                 owner_chat_id = str(config.telegram.get("chat_id", "8047188903"))
                 if owner_chat_id:
@@ -149,8 +192,8 @@ def daily_autopilot_scheduler():
 
             # Slot 2: Shaam 6:00 PM IST (Window: 18:00 to 23:59 IST)
             slot2_key = f"{today_str}_slot2_18"
-            if chour >= 18 and last_autopilot_slot != slot2_key and not is_generating:
-                last_autopilot_slot = slot2_key
+            if chour >= 18 and not is_autopilot_slot_completed(slot2_key) and not is_generating:
+                mark_autopilot_slot_completed(slot2_key)
                 logger.info(f"🚀 DAILY 2X AUTOPILOT TRIGGERED FOR Slot 2 (6:00 PM IST) on {today_str}!")
                 owner_chat_id = str(config.telegram.get("chat_id", "8047188903"))
                 if owner_chat_id:
@@ -177,8 +220,8 @@ def daily_autopilot_scheduler():
                 threading.Thread(target=autopilot_worker_2, daemon=True).start()
 
             # Daily 9:00 PM Growth Report (Window: 21:00 to 23:59 IST)
-            if chour >= 21 and last_growth_report_date != today_str:
-                last_growth_report_date = today_str
+            if chour >= 21 and not is_growth_report_completed(today_str):
+                mark_growth_report_completed(today_str)
                 owner_chat_id = str(config.telegram.get("chat_id", "8047188903"))
                 if owner_chat_id:
                     try:

@@ -149,15 +149,16 @@ def run_pipeline(
         "--font-size", "75",
         "--text-fore-color", "#FFFF00",
         "--stroke-color", "#000000",
-        "--stroke-width", "3.5",
+        "--stroke-width", "3",
         "--subtitle-enabled",
         "--subtitle-position", "two_thirds_bottom",
-        "--subtitle-animation", "pop_spring",
+        "--subtitle-animation", "none",
         "--video-clip-duration", "3",
         "--match-materials-to-script",
         "--video-concat-mode", "sequential",
         "--bgm-type", "random",
-        "--bgm-volume", "0.18"
+        "--bgm-volume", "0.18",
+        "--n-threads", "1"
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")

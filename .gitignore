@@ -1,7 +1,7 @@
 .DS_Store
 /config.toml
-/config.toml.bak
-/storage/
+/storage/*
+!/storage/autopilot_state.json
 /.idea/
 /app/services/__pycache__
 /app/__pycache__/

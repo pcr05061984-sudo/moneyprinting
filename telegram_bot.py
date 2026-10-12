@@ -34,6 +34,12 @@ from app.services import telegram_notify, youtube_upload
 from app.services.youtube_analyzer import YouTubeAnalyzer
 import auto_pipeline
 
+Path("storage").mkdir(parents=True, exist_ok=True)
+try:
+    logger.add("storage/server.log", rotation="10 MB", retention="2 days", level="INFO", encoding="utf-8")
+except Exception:
+    pass
+
 authenticated_users = set()
 last_activity = {}
 lock_notified = {}
@@ -296,8 +302,23 @@ def get_vip_menu():
         ["📊 Channel Review", "🚀 Upload to YouTube"],
         ["📁 Download Latest Video", "📺 My Channel"],
         ["🔑 API Settings", "⚙️ Server Status"],
-        ["🔒 Lock Terminal"]
+        ["📋 Server Logs", "🔒 Lock Terminal"]
     ]
+
+
+def handle_server_logs(chat_id: str):
+    log_file = Path("storage/server.log")
+    if log_file.exists():
+        try:
+            with open(log_file, "r", encoding="utf-8", errors="replace") as f:
+                lines = f.readlines()
+            recent = "".join(lines[-25:]).strip()
+            if recent:
+                send_reply(chat_id, f"📋 <b>Recent Server Logs:</b>\n\n<pre>{recent[-3500:]}</pre>", keyboard=get_vip_menu())
+                return
+        except Exception as e:
+            logger.error(f"Failed to read log file: {e}")
+    send_reply(chat_id, "ℹ️ No server log file found or log is currently empty.", keyboard=get_vip_menu())
 
 
 def handle_upload_to_youtube(chat_id: str):
@@ -828,6 +849,10 @@ def run_bot():
                 # 7. Status
                 elif text in ["⚙️ Server Status", "/status"]:
                     handle_server_status(chat_id)
+
+                # 7.1 Server Logs
+                elif text in ["📋 Server Logs", "/logs", "/log"]:
+                    handle_server_logs(chat_id)
 
                 # 8. Start / Menu fallback
                 elif text in ["/start", "/menu", "menu", "hi", "hello"]:

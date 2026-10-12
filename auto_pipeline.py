@@ -155,7 +155,7 @@ def run_pipeline(
         "--subtitle-animation", "none",
         "--video-clip-duration", "3",
         "--match-materials-to-script",
-        "--video-concat-mode", "sequential",
+        "--video-source", "pexels",
         "--bgm-type", "random",
         "--bgm-volume", "0.18",
         "--n-threads", "1"
@@ -165,7 +165,12 @@ def run_pipeline(
     if result.returncode != 0:
         logger.error(f"Video render failed with code {result.returncode}!")
         logger.error(result.stderr[-1000:] if result.stderr else "No stderr")
-        telegram_notify.notify_status("error", "Video Render Failed", f"Exit code {result.returncode}")
+        err_snippet = (result.stderr or result.stdout or "No error output")[-500:].strip()
+        telegram_notify.notify_status(
+            "error",
+            "Video Render Failed",
+            f"Exit code: <b>{result.returncode}</b>\n\n<code>{err_snippet}</code>"
+        )
         return None
 
     # Parse stdout or disk search for output file

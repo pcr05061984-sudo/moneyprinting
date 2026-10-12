@@ -279,6 +279,18 @@ def get_application() -> FastAPI:
             "timestamp": time.time()
         }
 
+    @instance.get("/api/logs")
+    async def get_recent_logs():
+        log_file = "storage/server.log"
+        if os.path.exists(log_file):
+            try:
+                with open(log_file, "r", encoding="utf-8", errors="replace") as f:
+                    lines = f.readlines()
+                return {"status": "ok", "count": len(lines), "logs": [l.strip() for l in lines[-100:]]}
+            except Exception as e:
+                return {"status": "error", "message": str(e)}
+        return {"status": "ok", "logs": ["No server.log file found yet."]}
+
     return instance
 
 

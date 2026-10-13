@@ -61,9 +61,15 @@ def send_telegram_message(
         if resp.status_code == 200:
             logger.info("Telegram message sent successfully.")
             return True
-        else:
-            logger.error(f"Telegram error {resp.status_code}: {resp.text}")
-            return False
+        elif resp.status_code == 400 and parse_mode:
+            logger.warning(f"Telegram parse error {resp.text}, retrying as plain text...")
+            payload.pop("parse_mode", None)
+            retry_resp = requests.post(url, json=payload, timeout=15)
+            if retry_resp.status_code == 200:
+                logger.info("Telegram message sent successfully as plain text fallback.")
+                return True
+        logger.error(f"Telegram error {resp.status_code}: {resp.text}")
+        return False
     except Exception as e:
         logger.error(f"Failed to send Telegram message: {e}")
         return False

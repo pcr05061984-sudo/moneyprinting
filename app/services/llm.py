@@ -1001,6 +1001,18 @@ Please note that you must use English for generating video search terms; Chinese
         if i < _max_retries - 1:
             logger.warning(f"failed to generate video terms, trying again... {i + 1}")
 
+    if not search_terms:
+        logger.warning("LLM search terms generation exhausted, using high-retention visual fallback terms.")
+        subj = (video_subject or "viral story").strip()
+        search_terms = [
+            f"{subj} cinematic",
+            "dark mysterious atmosphere",
+            "intense eye contact stare",
+            "confident person thinking",
+            "dramatic shadows cinematic",
+            "luxury modern lifestyle"
+        ][:amount]
+
     logger.success(f"completed: \n{search_terms}")
     return search_terms
 

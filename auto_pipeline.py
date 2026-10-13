@@ -76,7 +76,7 @@ def pick_topic(custom_topic: str = "", analyze_channel: bool = False) -> str:
 def run_pipeline(
     subject: str = "",
     analyze_channel: bool = False,
-    voice_name: str = "gemini:Puck-Upbeat",
+    voice_name: str = "hi-IN-MadhurNeural",
     output_dir: str = "storage/production"
 ):
     """Run full end-to-end production pipeline."""
@@ -127,14 +127,35 @@ def run_pipeline(
         f.write(f"=== PINNED COMMENT ===\n{seo_metadata.get('pinned_comment')}\n")
     logger.success("✅ YouTube SEO metadata prepared.")
 
+    # 3.5 Prepare Search Terms
+    logger.info("🔎 Preparing Video Search Terms for Pexels...")
+    terms_list = []
+    try:
+        terms_list = llm.generate_terms(chosen_subject, script, amount=6)
+    except Exception as te:
+        logger.warning(f"Terms generation error: {te}")
+
+    if not terms_list:
+        subj = (chosen_subject or "dark psychology rules").strip()
+        terms_list = [
+            f"{subj} cinematic",
+            "dark mysterious atmosphere",
+            "intense eye contact stare",
+            "confident person thinking",
+            "dramatic shadows cinematic",
+            "luxury modern lifestyle"
+        ]
+    video_terms_str = ", ".join(terms_list)
+    logger.info(f"Using Video Terms: {video_terms_str}")
+
     telegram_notify.notify_status(
         "script",
         "Script & SEO Metadata Ready 🏷️",
-        f"🔥 <b>Title:</b> {seo_metadata.get('primary_title')}\n🎬 Starting HD Video Rendering (Fast Cuts + Gemini Voice)..."
+        f"🔥 <b>Title:</b> {seo_metadata.get('primary_title')}\n🎬 Starting HD Video Rendering (Fast Cuts + Madhur Hindi Voice)..."
     )
 
     # 4. Render Video via CLI
-    logger.info("🎬 Step 3: Rendering 1080x1920 HD Short with Gemini Voice & Fast Cuts...")
+    logger.info("🎬 Step 3: Rendering 1080x1920 HD Short with Fast Cuts...")
     venv_python = Path(".venv") / "Scripts" / "python.exe"
     python_cmd = str(venv_python) if venv_python.exists() else sys.executable
 
@@ -143,6 +164,7 @@ def run_pipeline(
         "cli.py",
         "--video-subject", chosen_subject,
         "--video-script", script,
+        "--video-terms", video_terms_str,
         "--video-aspect", "9:16",
         "--voice-name", voice_name,
         "--font-name", "Nirmala.ttc",
@@ -154,7 +176,6 @@ def run_pipeline(
         "--subtitle-position", "two_thirds_bottom",
         "--subtitle-animation", "none",
         "--video-clip-duration", "3",
-        "--match-materials-to-script",
         "--video-source", "pexels",
         "--bgm-type", "random",
         "--bgm-volume", "0.18",
@@ -164,12 +185,14 @@ def run_pipeline(
     result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if result.returncode != 0:
         logger.error(f"Video render failed with code {result.returncode}!")
-        logger.error(result.stderr[-1000:] if result.stderr else "No stderr")
-        err_snippet = (result.stderr or result.stdout or "No error output")[-500:].strip()
+        output_combined = ((result.stderr or "") + "\n" + (result.stdout or "")).strip()
+        logger.error(f"Render output snippet:\n{output_combined[-1500:]}")
+        import html
+        err_snippet = html.escape((output_combined or "No error output")[-500:].strip())
         telegram_notify.notify_status(
             "error",
             "Video Render Failed",
-            f"Exit code: <b>{result.returncode}</b>\n\n<code>{err_snippet}</code>"
+            f"Exit code: <b>{result.returncode}</b>\n\n<pre>{err_snippet}</pre>"
         )
         return None
 

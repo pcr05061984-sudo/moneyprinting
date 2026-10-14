@@ -131,3 +131,94 @@ def notify_status(stage: str, title: str, details: str = ""):
     icon = icons.get(stage.lower(), "🔔")
     msg = f"<b>{icon} MoneyPrinterTurbo: {title}</b>\n\n{details}"
     return send_telegram_message(msg)
+
+
+def notify_alert(
+    title: str,
+    what_happened: str,
+    technical_error: str = "",
+    action_taken: str = "",
+    severity: str = "ERROR"
+) -> bool:
+    """
+    Direct Real-Time Telegram Alert for Render/Application issues.
+    Delivers instant diagnostic report to Jayant Regar.
+    """
+    import html
+    from datetime import datetime, timedelta, timezone
+
+    ist_tz = timezone(timedelta(hours=5, minutes=30))
+    now_ist = datetime.now(ist_tz).strftime("%d-%m-%Y %I:%M:%S %p IST")
+
+    severity_icons = {
+        "INFO": "🟢",
+        "WARNING": "⚠️",
+        "ERROR": "🚨",
+        "CRITICAL": "🔥"
+    }
+    icon = severity_icons.get(severity.upper(), "🚨")
+
+    lines = [
+        "╔═══════════════════════════════════╗",
+        f"║   {icon} <b>RENDER SENTINEL: {severity.upper()}</b>",
+        "╚═══════════════════════════════════╝",
+        "",
+        f"🕒 <b>Waqt:</b> <code>{now_ist}</code>",
+        f"📌 <b>Component:</b> <b>{html.escape(str(title))}</b>",
+        f"🔍 <b>Kya Hua:</b> {html.escape(str(what_happened))}"
+    ]
+
+    if action_taken:
+        lines.append(f"🛠️ <b>System Action:</b> {html.escape(str(action_taken))}")
+
+    if technical_error:
+        clean_err = html.escape(str(technical_error)[-700:].strip())
+        lines.append(f"\n📋 <b>Technical Error Log:</b>\n<pre>{clean_err}</pre>")
+
+    lines.append("\n<i>MoneyPrinterTurbo Sentinel is actively monitoring Render 24/7.</i>")
+
+    full_msg = "\n".join(lines)
+    return send_telegram_message(full_msg)
+
+
+_last_alert_times = {}
+
+
+def install_telegram_error_sink():
+    """Install global Loguru sink to catch ERROR/CRITICAL logs and alert Telegram."""
+    import time
+
+    def _telegram_sink(message):
+        record = message.record
+        level_no = record["level"].no
+        if level_no < 40:
+            return
+
+        msg_text = record["message"]
+        # Skip internal telegram errors or logs to prevent recursion loops
+        if "telegram" in msg_text.lower() or "api.telegram.org" in msg_text.lower():
+            return
+
+        # Throttle: max 1 alert per error message signature every 120s
+        key = msg_text[:60]
+        now = time.time()
+        last_t = _last_alert_times.get(key, 0)
+        if now - last_t < 120:
+            return
+        _last_alert_times[key] = now
+
+        loc = f"{record['file'].name}:{record['line']}"
+        notify_alert(
+            title=f"Error in {loc}",
+            what_happened=f"Render application me error log hua:\n{msg_text[:200]}",
+            technical_error=msg_text,
+            action_taken="Recorded in server.log & Sentinel dispatched alert",
+            severity="ERROR" if level_no < 50 else "CRITICAL"
+        )
+
+    try:
+        logger.add(_telegram_sink, level="ERROR")
+        logger.info("Telegram Error Alert Sentinel Sink successfully installed.")
+    except Exception as e:
+        logger.warning(f"Could not install telegram error sink: {e}")
+

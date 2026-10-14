@@ -37,6 +37,7 @@ import auto_pipeline
 Path("storage").mkdir(parents=True, exist_ok=True)
 try:
     logger.add("storage/server.log", rotation="10 MB", retention="2 days", level="INFO", encoding="utf-8")
+    telegram_notify.install_telegram_error_sink()
 except Exception:
     pass
 
@@ -253,6 +254,16 @@ def daily_autopilot_scheduler():
 
         except Exception as e:
             logger.error(f"Error in daily_autopilot_scheduler: {e}")
+            try:
+                telegram_notify.notify_alert(
+                    title="Autopilot Scheduler Exception 🚨",
+                    what_happened=f"Daily Autopilot Scheduler loop me error aaya: {str(e)}",
+                    technical_error=str(e),
+                    action_taken="Scheduler loop safely continuing to ensure next slots run",
+                    severity="ERROR"
+                )
+            except Exception:
+                pass
         time.sleep(25)
 
 
@@ -302,7 +313,8 @@ def get_vip_menu():
         ["📊 Channel Review", "🚀 Upload to YouTube"],
         ["📁 Download Latest Video", "📺 My Channel"],
         ["🔑 API Settings", "⚙️ Server Status"],
-        ["📋 Server Logs", "🔒 Lock Terminal"]
+        ["📋 Server Logs", "🚨 Test Alert System"],
+        ["🔒 Lock Terminal"]
     ]
 
 
@@ -649,18 +661,50 @@ def render_keepalive_watchdog():
     health_endpoint = f"{render_url.rstrip('/')}/health"
     logger.info(f"🌐 Keep-Alive Watchdog active: Pinging {health_endpoint} every 10 minutes...")
     time.sleep(120)
+    failed_pings = 0
     while True:
         try:
             r = requests.get(health_endpoint, timeout=15)
-            logger.debug(f"Keep-alive ping to {health_endpoint}: status {r.status_code}")
+            if r.status_code == 200:
+                failed_pings = 0
+                logger.debug(f"Keep-alive ping to {health_endpoint}: status 200 OK")
+            else:
+                failed_pings += 1
+                logger.warning(f"Keep-alive ping to {health_endpoint} returned status {r.status_code}")
+                if failed_pings >= 3:
+                    telegram_notify.notify_alert(
+                        title="Render Keep-Alive Warning ⚠️",
+                        what_happened=f"Render health check ping 3 baar fail hua (Status: {r.status_code}). Server unresponsive ho sakta hai.",
+                        action_taken="Watchdog continue to ping every 10 minutes",
+                        severity="WARNING"
+                    )
         except Exception as e:
-            logger.debug(f"Keep-alive ping: {e}")
+            failed_pings += 1
+            logger.warning(f"Keep-alive ping error: {e}")
+            if failed_pings >= 3:
+                telegram_notify.notify_alert(
+                    title="Render Connection Warning ⚠️",
+                    what_happened=f"Render health endpoint ping fail ho raha hai: {str(e)}",
+                    action_taken="Watchdog auto-retrying ping in 10 minutes",
+                    severity="WARNING"
+                )
         time.sleep(600)
 
 
 def run_bot():
     token = get_bot_token()
     logger.info("🤖 Starting VIP Telegram Controller for Jayant Regar...")
+    # Send startup sentinel alert to Jayant Regar
+    try:
+        telegram_notify.notify_alert(
+            title="Render Cloud Container Online 🟢",
+            what_happened="MoneyPrinterTurbo Render cloud par successfully boot aur live ho gaya hai.",
+            action_taken="Daily 2X Autopilot Scheduler (1:00 PM & 6:00 PM IST) aur Sentinel Watchdog active hain.",
+            severity="INFO"
+        )
+    except Exception as se:
+        logger.warning(f"Startup alert exception: {se}")
+
     # Start keep-alive watchdog to prevent Render sleep
     threading.Thread(target=render_keepalive_watchdog, daemon=True).start()
     # Start auto-lock watchdog thread
@@ -853,6 +897,15 @@ def run_bot():
                 # 7.1 Server Logs
                 elif text in ["📋 Server Logs", "/logs", "/log"]:
                     handle_server_logs(chat_id)
+
+                # 7.2 Test Alert System
+                elif text in ["🚨 Test Alert System", "/test_alert", "test alert"]:
+                    telegram_notify.notify_alert(
+                        title="Sentinel Alert System Live Test 🔔",
+                        what_happened="Jayant bhai, aapka Real-Time Telegram Error Alert System 100% active aur healthy hai! Render ya pipeline me koi bhi dikkat aayegi, toh turant yahan exact reason ke sath alert aayega.",
+                        action_taken="Verified real-time communication between Render and Telegram Bot",
+                        severity="INFO"
+                    )
 
                 # 8. Start / Menu fallback
                 elif text in ["/start", "/menu", "menu", "hi", "hello"]:

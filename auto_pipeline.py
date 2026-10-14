@@ -102,7 +102,12 @@ def run_pipeline(
     script = llm.generate_script(video_subject=chosen_subject)
     if not script:
         logger.error("Failed to generate script!")
-        telegram_notify.notify_status("error", "Script Generation Failed", f"Topic: {chosen_subject}")
+        telegram_notify.notify_alert(
+            title="Script Generation Error",
+            what_happened=f"Gemini LLM subject '{chosen_subject}' ke liye script generate nahi kar paya.",
+            action_taken="Pipeline safely stopped to preserve resources",
+            severity="ERROR"
+        )
         return None
 
     script_path = target_dir / "script.txt"
@@ -187,12 +192,13 @@ def run_pipeline(
         logger.error(f"Video render failed with code {result.returncode}!")
         output_combined = ((result.stderr or "") + "\n" + (result.stdout or "")).strip()
         logger.error(f"Render output snippet:\n{output_combined[-1500:]}")
-        import html
-        err_snippet = html.escape((output_combined or "No error output")[-500:].strip())
-        telegram_notify.notify_status(
-            "error",
-            "Video Render Failed",
-            f"Exit code: <b>{result.returncode}</b>\n\n<pre>{err_snippet}</pre>"
+        err_snippet = (output_combined or "No error output")[-500:].strip()
+        telegram_notify.notify_alert(
+            title="Video Rendering Engine Failure 🎬",
+            what_happened=f"Video rendering CLI process exit code {result.returncode} ke sath fail ho gayi.",
+            technical_error=err_snippet,
+            action_taken="Full error log recorded in server.log for diagnosis",
+            severity="CRITICAL"
         )
         return None
 
@@ -268,11 +274,24 @@ def run_pipeline(
                 logger.success(f"Video uploaded to YouTube: {yt_url}")
             except Exception as up_err:
                 logger.error(f"YouTube auto-upload failed: {up_err}")
-                telegram_notify.notify_status("error", "YouTube Auto-Upload Error", str(up_err))
+                telegram_notify.notify_alert(
+                    title="YouTube Auto-Upload Failed 🚀",
+                    what_happened="Video render ho chuki hai par YouTube par auto-publish fail hua.",
+                    technical_error=str(up_err),
+                    action_taken="Video storage me safe hai. Telegram bot se 'Upload to YouTube' dabayein.",
+                    severity="ERROR"
+                )
         else:
             logger.info("YouTube not authenticated; skipping auto-upload.")
     except Exception as e:
         logger.warning(f"Could not copy or send final video: {e}")
+        telegram_notify.notify_alert(
+            title="Video Packaging / Delivery Exception",
+            what_happened="Final video save ya deliver karte waqt exception aaya.",
+            technical_error=str(e),
+            action_taken="Inspected storage directory",
+            severity="ERROR"
+        )
 
     logger.info("==================================================")
     logger.info(f"✅ READY FOR PUBLISH: {target_dir}")

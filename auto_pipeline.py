@@ -76,7 +76,7 @@ def pick_topic(custom_topic: str = "", analyze_channel: bool = False) -> str:
 def run_pipeline(
     subject: str = "",
     analyze_channel: bool = False,
-    voice_name: str = "hi-IN-MadhurNeural",
+    voice_name: str = "gemini:Puck-Upbeat",
     output_dir: str = "storage/production"
 ):
     """Run full end-to-end production pipeline."""
@@ -151,7 +151,7 @@ def run_pipeline(
     telegram_notify.notify_status(
         "script",
         "Script & SEO Metadata Ready 🏷️",
-        f"🔥 <b>Title:</b> {seo_metadata.get('primary_title')}\n🎬 Starting HD Video Rendering (Fast Cuts + Madhur Hindi Voice)..."
+        f"🔥 <b>Title:</b> {seo_metadata.get('primary_title')}\n🎬 Starting HD Video Rendering (Fast Cuts + Gemini Live Voice)..."
     )
 
     # 4. Render Video via CLI

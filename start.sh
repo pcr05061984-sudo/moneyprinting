@@ -60,6 +60,13 @@ if os.path.exists("config.toml"):
         tg_cfg["secret_pin"] = os.environ.get("SECRET_PIN", "9414")
         tg_cfg["auto_lock_minutes"] = 2
 
+        ui_cfg = cfg.setdefault("ui", {})
+        ui_cfg["voice_name"] = "gemini:Puck-Upbeat"
+        ui_cfg["font_name"] = "Nirmala.ttc"
+        ui_cfg["text_fore_color"] = "#FFFF00"
+        ui_cfg["stroke_color"] = "#000000"
+        ui_cfg["stroke_width"] = 3
+
         with open("config.toml", "w") as f:
             toml.dump(cfg, f)
         print("Configuration successfully verified with valid credentials.")

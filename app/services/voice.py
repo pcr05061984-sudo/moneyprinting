@@ -1898,8 +1898,16 @@ def gemini_tts(
                     )
 
         if not response or not response.candidates or not response.candidates[0].content:
-            logger.error("No audio content received from any Gemini TTS model")
-            return None
+            logger.warning(
+                "⚠️ All Gemini Live TTS models exhausted or failed! Falling back to Edge TTS (hi-IN-MadhurNeural) to prevent video crash..."
+            )
+            return tts(
+                text=text,
+                voice_name="hi-IN-MadhurNeural",
+                voice_rate=voice_rate,
+                voice_file=voice_file,
+                voice_volume=voice_volume
+            )
             
         # 获取音频数据
         audio_data = None

@@ -20,6 +20,18 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+LOGS_DIR = PROJECT_ROOT / "logs"
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+logger.add(
+    LOGS_DIR / "auto_pipeline_latest.log",
+    rotation="10 MB",
+    retention="14 days",
+    encoding="utf-8",
+    level="DEBUG",
+    backtrace=True,
+    diagnose=True
+)
+
 if sys.platform == "win32":
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")

@@ -22,23 +22,48 @@ SCOPES = [
 
 
 def is_authenticated() -> bool:
-    """Check if youtube_token.json exists and is valid."""
+    """Check if youtube_token.json exists and credentials are valid/refreshable."""
     if not TOKEN_FILE.exists():
-        return False
+        if os.environ.get("YOUTUBE_TOKEN_JSON"):
+            try:
+                token_info = json.loads(os.environ["YOUTUBE_TOKEN_JSON"])
+                with open(TOKEN_FILE, "w", encoding="utf-8") as f:
+                    f.write(json.dumps(token_info))
+            except Exception:
+                return False
+        else:
+            return False
+
     try:
         from google.oauth2.credentials import Credentials
+        from google.auth.transport.requests import Request
         creds = Credentials.from_authorized_user_file(str(TOKEN_FILE), SCOPES)
-        return creds and (creds.valid or creds.refresh_token is not None)
+        if not creds:
+            return False
+        if creds.valid:
+            return True
+        if creds.expired and creds.refresh_token:
+            try:
+                creds.refresh(Request())
+                with open(TOKEN_FILE, "w", encoding="utf-8") as f:
+                    f.write(creds.to_json())
+                return True
+            except Exception as e:
+                logger.warning(f"YouTube refresh token expired or revoked: {e}")
+                return False
+        return False
     except Exception as e:
         logger.warning(f"Error checking YouTube token: {e}")
         return False
 
 
-def get_authenticated_service():
+def get_authenticated_service(interactive: bool = False):
     """
     Load or create authenticated YouTube API service.
     First checks youtube_token.json.
-    If missing or expired, uses client_secret.json with OAuth flow.
+    If missing or expired:
+      - If interactive=True: runs local browser OAuth flow using client_secret.json.
+      - If interactive=False: does NOT block/freeze; returns None.
     """
     from google.oauth2.credentials import Credentials
     from google_auth_oauthlib.flow import InstalledAppFlow
@@ -66,11 +91,18 @@ def get_authenticated_service():
             logger.info("Refreshing expired YouTube access token...")
             try:
                 creds.refresh(Request())
+                with open(TOKEN_FILE, "w", encoding="utf-8") as f:
+                    f.write(creds.to_json())
+                logger.success("Refreshed YouTube access token successfully.")
             except Exception as e:
-                logger.error(f"Failed to refresh token: {e}")
+                logger.error(f"Failed to refresh YouTube token: {e}")
                 creds = None
 
         if not creds:
+            if not interactive:
+                logger.warning("YouTube credentials are invalid or expired, and running in non-interactive mode. Skipping interactive OAuth flow.")
+                return None
+
             if not CLIENT_SECRET_FILE.exists():
                 raise FileNotFoundError(
                     f"Neither valid token nor '{CLIENT_SECRET_FILE.name}' found in project root. "
@@ -80,10 +112,13 @@ def get_authenticated_service():
             flow = InstalledAppFlow.from_client_secrets_file(str(CLIENT_SECRET_FILE), SCOPES)
             creds = flow.run_local_server(port=0, prompt="consent", access_type="offline")
 
-        # Save credentials for future use
-        with open(TOKEN_FILE, "w", encoding="utf-8") as f:
-            f.write(creds.to_json())
-        logger.success(f"YouTube credentials saved to {TOKEN_FILE.name}")
+            # Save credentials for future use
+            with open(TOKEN_FILE, "w", encoding="utf-8") as f:
+                f.write(creds.to_json())
+            logger.success(f"YouTube credentials saved to {TOKEN_FILE.name}")
+
+    if not creds or not creds.valid:
+        return None
 
     return build("youtube", "v3", credentials=creds)
 
@@ -106,7 +141,9 @@ def upload_short(
     from googleapiclient.http import MediaFileUpload
 
     logger.info(f"Authenticating with YouTube API...")
-    youtube = get_authenticated_service()
+    youtube = get_authenticated_service(interactive=False)
+    if not youtube:
+        raise RuntimeError("YouTube API service could not be authenticated. Refresh token may be expired.")
 
     # YouTube max title length is 100
     safe_title = title.strip()[:100]
@@ -165,7 +202,7 @@ if __name__ == "__main__":
     if "--auth" in sys.argv or "-a" in sys.argv:
         try:
             print("Authenticating with YouTube...")
-            srv = get_authenticated_service()
+            srv = get_authenticated_service(interactive=True)
             channels = srv.channels().list(part="snippet,statistics", mine=True).execute()
             items = channels.get("items", [])
             if items:

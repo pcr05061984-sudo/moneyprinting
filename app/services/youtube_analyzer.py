@@ -64,7 +64,7 @@ class YouTubeAnalyzer:
         try:
             from app.services import youtube_upload
             if youtube_upload.is_authenticated():
-                self._oauth_service = youtube_upload.get_authenticated_service()
+                self._oauth_service = youtube_upload.get_authenticated_service(interactive=False)
                 return self._oauth_service
         except Exception as e:
             logger.warning(f"Could not initialize OAuth service for analyzer: {e}")

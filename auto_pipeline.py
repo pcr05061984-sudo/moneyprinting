@@ -283,6 +283,12 @@ def run_pipeline(
                 )
         else:
             logger.info("YouTube not authenticated; skipping auto-upload.")
+            telegram_notify.notify_alert(
+                title="YouTube Auto-Upload Skipped ⚠️",
+                what_happened="Video render hokar Telegram par deliver ho chuki hai, par YouTube auto-upload skip hua kyunki YouTube OAuth token expire ya absent hai.",
+                action_taken="Video storage me safe hai. Ek baar terminal me 'python authenticate_youtube.py' run karke re-login karein.",
+                severity="WARNING"
+            )
     except Exception as e:
         logger.warning(f"Could not copy or send final video: {e}")
         telegram_notify.notify_alert(

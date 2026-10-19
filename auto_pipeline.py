@@ -196,15 +196,17 @@ def run_pipeline(
         "--video-source", "pexels",
         "--bgm-type", "random",
         "--bgm-volume", "0.18",
-        "--n-threads", "1"
+        "--n-threads", "2" if os.environ.get("RENDER") else "4"
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if result.returncode != 0:
         logger.error(f"Video render failed with code {result.returncode}!")
         output_combined = ((result.stderr or "") + "\n" + (result.stdout or "")).strip()
-        logger.error(f"Render output snippet:\n{output_combined[-1500:]}")
-        err_snippet = (output_combined or "No error output")[-500:].strip()
+        non_frame_lines = [l for l in output_combined.splitlines() if not l.strip().startswith("frame=")]
+        clean_output = "\n".join(non_frame_lines).strip()
+        err_snippet = (clean_output or output_combined or "No error output")[-700:].strip()
+        logger.error(f"Render output snippet:\n{err_snippet}")
         telegram_notify.notify_alert(
             title="Video Rendering Engine Failure 🎬",
             what_happened=f"Video rendering CLI process exit code {result.returncode} ke sath fail ho gayi.",

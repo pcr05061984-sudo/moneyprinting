@@ -159,72 +159,78 @@ def get_schedule_times() -> list[str]:
 
 
 def daily_autopilot_scheduler():
-    """Background scheduler that automatically generates and uploads 2 shorts daily (13:00 & 18:00 IST) + 21:00 Growth Report in Indian Standard Time."""
+    """Background scheduler that automatically manages 2X daily production (13:00 & 18:00 IST) + 21:00 Growth Report in Indian Standard Time."""
     global is_generating
     logger.info("⏰ Starting Daily 2X Autopilot Scheduler in IST (13:00 & 18:00 IST, Report: 21:00 IST)...")
+    is_cloud = bool(os.environ.get("RENDER"))
+    enable_cloud_render = os.environ.get("ENABLE_CLOUD_RENDERER", "false").lower() == "true"
+
     while True:
         try:
             now_ist = datetime.datetime.now(IST)
             today_str = now_ist.strftime("%Y-%m-%d")
             chour = now_ist.hour
 
-            # Slot 1: Dopahar 1:00 PM IST (Window: 13:00 to 17:59 IST)
-            slot1_key = f"{today_str}_slot1_13"
-            if 13 <= chour < 18 and not is_autopilot_slot_completed(slot1_key) and not is_generating:
-                mark_autopilot_slot_completed(slot1_key)
-                logger.info(f"🚀 DAILY 2X AUTOPILOT TRIGGERED FOR Slot 1 (1:00 PM IST) on {today_str}!")
-                owner_chat_id = str(config.telegram.get("chat_id", "8047188903"))
-                if owner_chat_id:
-                    send_reply(
-                        owner_chat_id,
-                        f"⏰ <b>DAILY 2X AUTOPILOT TRIGGERED! (Dopahar 1:00 PM IST Slot)</b> 🎬\n\n"
-                        f"Channel: <b>Jayant Talks</b>\n"
-                        f"• Step 1: Picking viral high-retention topic...\n"
-                        f"• Step 2: Generating script & rendering 1080x1920 Short...\n"
-                        f"• Step 3: Direct uploading to YouTube (Public)...\n\n"
-                        f"<i>100% Hands-Free Autopilot — Video live hote hi link yahan bhejta hu!</i>"
-                    )
+            # Heavy video rendering runs on the local Windows PC with dedicated GPU/CPU and 16GB RAM.
+            # Cloud Render (512MB RAM) only runs the pipeline if explicitly enabled via ENABLE_CLOUD_RENDERER=true.
+            if not is_cloud or enable_cloud_render:
+                # Slot 1: Dopahar 1:00 PM IST (Window: 13:00 to 17:59 IST)
+                slot1_key = f"{today_str}_slot1_13"
+                if 13 <= chour < 18 and not is_autopilot_slot_completed(slot1_key) and not is_generating:
+                    mark_autopilot_slot_completed(slot1_key)
+                    logger.info(f"🚀 DAILY 2X AUTOPILOT TRIGGERED FOR Slot 1 (1:00 PM IST) on {today_str}!")
+                    owner_chat_id = str(config.telegram.get("chat_id", "8047188903"))
+                    if owner_chat_id:
+                        send_reply(
+                            owner_chat_id,
+                            f"⏰ <b>DAILY 2X AUTOPILOT TRIGGERED! (Dopahar 1:00 PM IST Slot)</b> 🎬\n\n"
+                            f"Channel: <b>Jayant Talks</b>\n"
+                            f"• Step 1: Picking viral high-retention topic...\n"
+                            f"• Step 2: Generating script & rendering 1080x1920 Short...\n"
+                            f"• Step 3: Direct uploading to YouTube (Public)...\n\n"
+                            f"<i>100% Hands-Free Autopilot — Video live hote hi link yahan bhejta hu!</i>"
+                        )
 
-                def autopilot_worker_1():
-                    global is_generating
-                    is_generating = True
-                    try:
-                        auto_pipeline.run_pipeline(analyze_channel=True)
-                    except Exception as err:
-                        logger.error(f"Autopilot pipeline error: {err}")
-                    finally:
-                        is_generating = False
+                    def autopilot_worker_1():
+                        global is_generating
+                        is_generating = True
+                        try:
+                            auto_pipeline.run_pipeline(analyze_channel=True)
+                        except Exception as err:
+                            logger.error(f"Autopilot pipeline error: {err}")
+                        finally:
+                            is_generating = False
 
-                threading.Thread(target=autopilot_worker_1, daemon=True).start()
+                    threading.Thread(target=autopilot_worker_1, daemon=True).start()
 
-            # Slot 2: Shaam 6:00 PM IST (Window: 18:00 to 23:59 IST)
-            slot2_key = f"{today_str}_slot2_18"
-            if chour >= 18 and not is_autopilot_slot_completed(slot2_key) and not is_generating:
-                mark_autopilot_slot_completed(slot2_key)
-                logger.info(f"🚀 DAILY 2X AUTOPILOT TRIGGERED FOR Slot 2 (6:00 PM IST) on {today_str}!")
-                owner_chat_id = str(config.telegram.get("chat_id", "8047188903"))
-                if owner_chat_id:
-                    send_reply(
-                        owner_chat_id,
-                        f"⏰ <b>DAILY 2X AUTOPILOT TRIGGERED! (Shaam 6:00 PM IST Slot)</b> 🎬\n\n"
-                        f"Channel: <b>Jayant Talks</b>\n"
-                        f"• Step 1: Picking viral high-retention topic...\n"
-                        f"• Step 2: Generating script & rendering 1080x1920 Short...\n"
-                        f"• Step 3: Direct uploading to YouTube (Public)...\n\n"
-                        f"<i>100% Hands-Free Autopilot — Video live hote hi link yahan bhejta hu!</i>"
-                    )
+                # Slot 2: Shaam 6:00 PM IST (Window: 18:00 to 23:59 IST)
+                slot2_key = f"{today_str}_slot2_18"
+                if chour >= 18 and not is_autopilot_slot_completed(slot2_key) and not is_generating:
+                    mark_autopilot_slot_completed(slot2_key)
+                    logger.info(f"🚀 DAILY 2X AUTOPILOT TRIGGERED FOR Slot 2 (6:00 PM IST) on {today_str}!")
+                    owner_chat_id = str(config.telegram.get("chat_id", "8047188903"))
+                    if owner_chat_id:
+                        send_reply(
+                            owner_chat_id,
+                            f"⏰ <b>DAILY 2X AUTOPILOT TRIGGERED! (Shaam 6:00 PM IST Slot)</b> 🎬\n\n"
+                            f"Channel: <b>Jayant Talks</b>\n"
+                            f"• Step 1: Picking viral high-retention topic...\n"
+                            f"• Step 2: Generating script & rendering 1080x1920 Short...\n"
+                            f"• Step 3: Direct uploading to YouTube (Public)...\n\n"
+                            f"<i>100% Hands-Free Autopilot — Video live hote hi link yahan bhejta hu!</i>"
+                        )
 
-                def autopilot_worker_2():
-                    global is_generating
-                    is_generating = True
-                    try:
-                        auto_pipeline.run_pipeline(analyze_channel=True)
-                    except Exception as err:
-                        logger.error(f"Autopilot pipeline error: {err}")
-                    finally:
-                        is_generating = False
+                    def autopilot_worker_2():
+                        global is_generating
+                        is_generating = True
+                        try:
+                            auto_pipeline.run_pipeline(analyze_channel=True)
+                        except Exception as err:
+                            logger.error(f"Autopilot pipeline error: {err}")
+                        finally:
+                            is_generating = False
 
-                threading.Thread(target=autopilot_worker_2, daemon=True).start()
+                    threading.Thread(target=autopilot_worker_2, daemon=True).start()
 
             # Daily 9:00 PM Growth Report (Window: 21:00 to 23:59 IST)
             if chour >= 21 and not is_growth_report_completed(today_str):
@@ -421,6 +427,21 @@ def handle_upload_to_youtube(chat_id: str):
 
 def handle_generate(chat_id: str, custom_topic: str = ""):
     global is_generating
+    is_cloud = bool(os.environ.get("RENDER"))
+    enable_cloud_render = os.environ.get("ENABLE_CLOUD_RENDERER", "false").lower() == "true"
+
+    if is_cloud and not enable_cloud_render:
+        send_reply(
+            chat_id,
+            "💡 <b>Full HD Video Engine Info:</b>\n\n"
+            "Cloud container 512MB RAM limit ki wajah se video encode nahi kar sakta.\n\n"
+            "👑 <b>Jayant Talks 2X Autopilot Engine:</b>\n"
+            "Aapke Local PC par Windows Scheduled Task har roz <b>1:00 PM & 6:00 PM IST</b> par full quality 1080x1920 video render karke direct LIVE upload karta hai!\n\n"
+            "<i>Aap PC par 1-click se 'python auto_pipeline.py' run karke kabhi bhi instant video bana sakte hain.</i>",
+            keyboard=get_vip_menu()
+        )
+        return
+
     if is_generating:
         send_reply(chat_id, "⚠️ <b>Video generation already in progress!</b> Please wait 2-3 minutes...")
         return
@@ -694,16 +715,6 @@ def render_keepalive_watchdog():
 def run_bot():
     token = get_bot_token()
     logger.info("🤖 Starting VIP Telegram Controller for Jayant Regar...")
-    # Send startup sentinel alert to Jayant Regar
-    try:
-        telegram_notify.notify_alert(
-            title="Render Cloud Container Online 🟢",
-            what_happened="MoneyPrinterTurbo Render cloud par successfully boot aur live ho gaya hai.",
-            action_taken="Daily 2X Autopilot Scheduler (1:00 PM & 6:00 PM IST) aur Sentinel Watchdog active hain.",
-            severity="INFO"
-        )
-    except Exception as se:
-        logger.warning(f"Startup alert exception: {se}")
 
     # Start keep-alive watchdog to prevent Render sleep
     threading.Thread(target=render_keepalive_watchdog, daemon=True).start()
@@ -808,6 +819,20 @@ def run_bot():
 
                 # 2.1 Autopilot Now (1-Click Instant Autopilot)
                 elif text in ["⚡ Autopilot Now", "/autopilot_now", "/trigger_now"]:
+                    is_cloud = bool(os.environ.get("RENDER"))
+                    enable_cloud_render = os.environ.get("ENABLE_CLOUD_RENDERER", "false").lower() == "true"
+                    if is_cloud and not enable_cloud_render:
+                        send_reply(
+                            chat_id,
+                            "👑 <b>Jayant Talks 2X Autopilot Status:</b>\n\n"
+                            "⏰ <b>Daily Slots:</b> Dopahar 1:00 PM & Shaam 6:00 PM IST\n"
+                            "🖥️ <b>Production Engine:</b> Local Windows PC (1080x1920 HD + Fast Cuts)\n"
+                            "📺 <b>Destination:</b> Jayant Talks (Public)\n\n"
+                            "<i>Video generation aapke local computer par automatically run hoti hai taaki bina memory limit ke best quality video render ho sake.</i>",
+                            keyboard=get_vip_menu()
+                        )
+                        continue
+
                     send_reply(
                         chat_id,
                         "🚀 <b>1-Click Autopilot Triggered!</b>\n\n"

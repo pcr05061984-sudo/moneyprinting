@@ -64,11 +64,15 @@ if os.path.exists("config.toml"):
         tg_cfg["auto_lock_minutes"] = 2
 
         ui_cfg = cfg.setdefault("ui", {})
-        ui_cfg["voice_name"] = "gemini:Puck-Upbeat"
+        ui_cfg["voice_name"] = "gemini:Charon-Informative"
         ui_cfg["font_name"] = "Nirmala.ttc"
-        ui_cfg["text_fore_color"] = "#FFFF00"
+        ui_cfg["font_size"] = 48
+        ui_cfg["text_fore_color"] = "#FFFFFF"
         ui_cfg["stroke_color"] = "#000000"
-        ui_cfg["stroke_width"] = 3
+        ui_cfg["stroke_width"] = 2
+        ui_cfg["subtitle_position"] = "custom"
+        ui_cfg["custom_position"] = 72
+        ui_cfg["subtitle_animation"] = "pop_spring"
 
         with open("config.toml", "w") as f:
             toml.dump(cfg, f)

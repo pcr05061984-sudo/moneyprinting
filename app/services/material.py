@@ -335,6 +335,15 @@ def _filter_materials_by_aspect(
     return filtered_items
 
 
+BANNED_VIDEO_KEYWORDS = {
+    "kiss", "kissing", "couple", "couples", "love", "romantic", "romance", "bed", "bedroom",
+    "bikini", "underwear", "lingerie", "sensual", "sexy", "erotic", "intimate", "naked",
+    "nude", "cleavage", "massage", "bath", "shower", "dating", "lips", "touching", "touch",
+    "swimwear", "swimsuit", "provocative", "seductive", "seduction", "breast", "breasts",
+    "embrace", "flirt", "flirting", "lover", "lovers", "hug", "hugging", "passionate", "sleepwear"
+}
+
+
 def search_videos_pexels(
     search_term: str,
     minimum_duration: int,
@@ -373,6 +382,10 @@ def search_videos_pexels(
         # loop through each video in the result
         for v in videos:
             if not isinstance(v, dict):
+                continue
+            video_url_slug = str(v.get("url") or "").lower()
+            if any(banned in video_url_slug for banned in BANNED_VIDEO_KEYWORDS):
+                logger.info(f"Skipping inappropriate/NSFW Pexels video: {video_url_slug}")
                 continue
             duration = v.get("duration")
             # check if video has desired minimum duration
@@ -515,6 +528,10 @@ def search_videos_pixabay(
         # loop through each video in the result
         for v in videos:
             if not isinstance(v, dict):
+                continue
+            video_url_slug = str(v.get("url") or "").lower()
+            if any(banned in video_url_slug for banned in BANNED_VIDEO_KEYWORDS):
+                logger.info(f"Skipping inappropriate/NSFW Pexels video: {video_url_slug}")
                 continue
             duration = v.get("duration")
             # check if video has desired minimum duration

@@ -942,10 +942,11 @@ def generate_terms(
 
 ## Constrains:
 1. the search terms are to be returned as a json-array of strings.
-2. each search term should consist of 1-3 words, descriptive of visual scenes (e.g. "dark cinematic man", "intense eye stare", "money cash rain", "luxury cars night", "whisper secret shadow").
+2. each search term should consist of 1-3 words, descriptive of visual scenes (e.g. "dark cinematic atmosphere", "chess game strategy", "city night drone", "hourglass time passing", "businessman walking rain").
 3. you must only return the json-array of strings. you must not return anything else. you must not return the script.
 4. the search terms must be visually dynamic and cinematic to maximize video retention.
 5. reply with english search terms only, even if the script is in Hindi.
+6. STRICT FAMILY-SAFE FILTER: NEVER use romantic, sensual, sexual, or intimate terms (NO couple, kiss, girl, bed, bedroom, hug, touch, skin, lips, or stare). Focus exclusively on business, strategy, abstract concepts, books, clocks, cityscapes, and dramatic moody atmosphere.
 {ordering_rule}
 
 ## Output Example:

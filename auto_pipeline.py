@@ -88,7 +88,7 @@ def pick_topic(custom_topic: str = "", analyze_channel: bool = False) -> str:
 def run_pipeline(
     subject: str = "",
     analyze_channel: bool = False,
-    voice_name: str = "gemini:Puck-Upbeat",
+    voice_name: str = "gemini:Charon-Informative",
     output_dir: str = "storage/production"
 ):
     """Run full end-to-end production pipeline."""
@@ -153,22 +153,28 @@ def run_pipeline(
         logger.warning(f"Terms generation error: {te}")
 
     if not terms_list:
-        subj = (chosen_subject or "dark psychology rules").strip()
+        subj = (chosen_subject or "psychology mindset rules").strip()
         terms_list = [
             f"{subj} cinematic",
             "dark mysterious atmosphere",
-            "intense eye contact stare",
-            "confident person thinking",
-            "dramatic shadows cinematic",
-            "luxury modern lifestyle"
+            "chess strategy move thinking",
+            "city lights night drone timelapse",
+            "hourglass time passing",
+            "library books dramatic lighting"
         ]
-    video_terms_str = ", ".join(terms_list)
+
+    # Strict family-safe filter: purge any romantic, sexual, or intimate terms
+    banned_kw = {"kiss", "couple", "love", "romantic", "romance", "bed", "bedroom", "bikini", "underwear", "lingerie", "sensual", "sexy", "erotic", "intimate", "naked", "nude", "cleavage", "massage", "bath", "shower", "dating", "lips", "touch", "body", "girl", "woman"}
+    clean_terms = [t for t in terms_list if not any(bk in t.lower() for bk in banned_kw)]
+    if not clean_terms:
+        clean_terms = ["dark atmospheric cinematic", "chess strategy thinking", "city night drone", "hourglass time passing", "library books dramatic"]
+    video_terms_str = ", ".join(clean_terms)
     logger.info(f"Using Video Terms: {video_terms_str}")
 
     telegram_notify.notify_status(
         "script",
         "Script & SEO Metadata Ready 🏷️",
-        f"🔥 <b>Title:</b> {seo_metadata.get('primary_title')}\n🎬 Starting HD Video Rendering (Fast Cuts + Gemini Live Voice)..."
+        f"🔥 <b>Title:</b> {seo_metadata.get('primary_title')}\n🎬 Starting HD Video Rendering (Fast Cuts + Deep Voice)..."
     )
 
     # 4. Render Video via CLI
@@ -185,13 +191,14 @@ def run_pipeline(
         "--video-aspect", "9:16",
         "--voice-name", voice_name,
         "--font-name", "Nirmala.ttc",
-        "--font-size", "75",
-        "--text-fore-color", "#FFFF00",
+        "--font-size", "48",
+        "--text-fore-color", "#FFFFFF",
         "--stroke-color", "#000000",
-        "--stroke-width", "3",
+        "--stroke-width", "2",
         "--subtitle-enabled",
-        "--subtitle-position", "two_thirds_bottom",
-        "--subtitle-animation", "none",
+        "--subtitle-position", "custom",
+        "--custom-position", "72",
+        "--subtitle-animation", "pop_spring",
         "--video-clip-duration", "3",
         "--video-source", "pexels",
         "--bgm-type", "random",

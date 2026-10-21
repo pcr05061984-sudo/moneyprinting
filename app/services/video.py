@@ -1711,8 +1711,8 @@ def generate_video(
         elif params.subtitle_position == "top":
             _clip = _clip.with_position(("center", video_height * 0.05))
         elif params.subtitle_position in ("two_thirds_bottom", "two_thirds", "2/3_bottom"):
-            # 2/3 from the bottom = 1/3 from the top: y = (video_height - _clip.h) * (1/3)
-            y_two_thirds = (video_height - _clip.h) / 3.0
+            # True lower third (70% from top) so captions never block faces or center screen
+            y_two_thirds = (video_height - _clip.h) * 0.70
             _clip = _clip.with_position(("center", y_two_thirds))
         elif params.subtitle_position == "custom":
             # Ensure the subtitle is fully within the screen bounds

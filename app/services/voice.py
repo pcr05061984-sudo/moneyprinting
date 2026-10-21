@@ -639,15 +639,12 @@ def _single_tts(
             result = gemini_tts(text, voice, voice_rate, voice_file, voice_volume)
             if result:
                 return result
+            # Retry strictly with another Gemini Live voice (Zero Edge TTS)
+            backup_gemini = "Orus" if voice != "Orus" else "Charon"
             logger.warning(
-                f"Gemini TTS failed for '{voice_name}', executing fallback to Edge TTS..."
+                f"Gemini TTS failed for '{voice}', retrying strictly with Gemini Live backup voice '{backup_gemini}'..."
             )
-            fallback_voice = (
-                "hi-IN-MadhurNeural"
-                if any("\u0900" <= c <= "\u097f" for c in text)
-                else "en-US-ChristopherNeural"
-            )
-            return azure_tts_v1(text, fallback_voice, voice_rate, voice_file)
+            return gemini_tts(text, backup_gemini, voice_rate, voice_file, voice_volume)
         else:
             logger.error(f"Invalid gemini voice name format: {voice_name}")
             return None
@@ -1898,16 +1895,10 @@ def gemini_tts(
                     )
 
         if not response or not response.candidates or not response.candidates[0].content:
-            logger.warning(
-                "⚠️ All Gemini Live TTS models exhausted or failed! Falling back to Edge TTS (hi-IN-MadhurNeural) to prevent video crash..."
+            logger.error(
+                "⚠️ All Gemini Live TTS models exhausted or failed! Audio generation aborted (Edge TTS disabled per configuration)."
             )
-            return tts(
-                text=text,
-                voice_name="hi-IN-MadhurNeural",
-                voice_rate=voice_rate,
-                voice_file=voice_file,
-                voice_volume=voice_volume
-            )
+            return None
             
         # 获取音频数据
         audio_data = None

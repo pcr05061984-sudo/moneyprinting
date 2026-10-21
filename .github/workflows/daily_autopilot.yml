@@ -1,0 +1,110 @@
+name: 24/7 Cloud Autopilot Production Engine (Jayant Talks)
+
+on:
+  schedule:
+    # Slot 1: Starts at 11:00 AM IST (05:30 UTC) - Target Publish 1:00 PM IST
+    - cron: '30 5 * * *'
+    # Slot 2: Starts at 4:00 PM IST (10:30 UTC) - Target Publish 6:00 PM IST
+    - cron: '30 10 * * *'
+  workflow_dispatch:
+    inputs:
+      custom_topic:
+        description: 'Optional Custom Topic (Leave empty for AI Channel Analysis)'
+        required: false
+        default: ''
+
+jobs:
+  autopilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install System Dependencies (FFmpeg & Fonts)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-noto-cjk
+          sudo fc-cache -fv
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Configure Production Credentials & Tokens
+        env:
+          YOUTUBE_TOKEN_JSON: ${{ secrets.YOUTUBE_TOKEN_JSON }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          # If config.toml is missing, copy template
+          if [ ! -f "config.toml" ] && [ -f "config.example.toml" ]; then
+            cp config.example.toml config.toml
+          fi
+
+          # Prepare youtube_token.json from fallback or env
+          if [ -n "$YOUTUBE_TOKEN_JSON" ]; then
+            echo "$YOUTUBE_TOKEN_JSON" > youtube_token.json
+          elif [ ! -f "youtube_token.json" ]; then
+            python -c '
+          import base64
+          b64 = "eyJ0b2tlbiI6ICJ5YTI5LmEwQVgwN0NtdWxsck1Ud1ZsTTlQaVpWQVJ6TFNJY1ZONEljZ0ZyWVlzOTRxR1dpMnFLLXk1enc3SkFyTWNHLW5qaWp4QTQyOElYWldFZVg2a0l1WmhRUVYwQ3hBOUREYldwQjZCY2hVd2EzTVN0cFAxYWZkQU9xNmNUUHZCQURvY0xvQ2I2Y2xRX3hkNjlXVktiTHp0bnJEdUtkUzJjbUtLc2toaUd0dVV6dHFhTVc0UVJ4UXlvSWVWWmFMUzBfTXlDU2ppTURITWFDZ1lLQVVJU0FSSVNGUUhHWDJNaTEwSkQ2MnJlWHdqZ0JFYmc3d0lKbmcwMjA2IiwgInJlZnJlc2hfdG9rZW4iOiAiMS8vMGdkTjNfM3lOeHFPOENnWUlBUkFBR0JBU053Ri1MOUlyQ2NoQXFocFR3QTliekRGeXc5S3o4RlRDcl9kSl9RaGwwc0NWZnA3MmNFcHpxV3I1XzEwTy1QNjZNejJiZ0Z6M0MwTSIsICJ0b2tlbl91cmkiOiAiaHR0cHM6Ly9vYXV0aDIuZ29vZ2xlYXBpcy5jb20vdG9rZW4iLCAiY2xpZW50X2lkIjogIjk5ODk0Mzg5OTA2My10YzI2cWxhamRsY2pnYmxxdTBuMmo3dGVkcDZkZGVpci5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsICJjbGllbnRfc2VjcmV0IjogIkdPQ1NQWC1JTkJRM2s4OFhRY0Q4T2tEYWUzTG1EZlgwbURKIiwgInNjb3BlcyI6IFsiaHR0cHM6Ly93d3cuZ29vZ2xlYXBpcy5jb20vYXV0aC95b3V0dWJlLnVwbG9hZCIsICJodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9hdXRoL3lvdXR1YmUucmVhZG9ubHkiXSwgInVuaXZlcnNlX2RvbWFpbiI6ICJnb29nbGVhcGlzLmNvbSIsICJhY2NvdW50IjogIiIsICJleHBpcnkiOiAiMjAyNi0xMC0xOVQwNzo0MDo1M1oifQ=="
+          with open("youtube_token.json", "wb") as f:
+              f.write(base64.b64decode(b64))
+          print("youtube_token.json prepared.")
+          '
+          fi
+
+          # Prepare config.toml with active credentials
+          python -c '
+          import os, toml, base64
+          cfg = toml.load("config.toml")
+          app_cfg = cfg.setdefault("app", {})
+          app_cfg["llm_provider"] = "gemini"
+          app_cfg["gemini_model_name"] = "gemini-3.6-flash"
+
+          default_gemini = base64.b64decode("QVEuQWI4Uk42SVRfNkNhTllKMmRvOVV4LWFDWFZyYWt3OGlJd1JoMUtQdXNkM0I3cUhZQnc=").decode()
+          default_pexels = base64.b64decode("eFpYSmlBQVV0MmJsNHQyUFFHRzNZRnZXTEJIN01BM3ZFdDRtQjVwU09YZHdjZkQxVTdrelRVTk8=").decode()
+          default_bot_token = base64.b64decode("ODgwNjAxNDM3MDpBQUdrNFlZaU1WM0o2N09FNVhZcG5PdXpHaWlPYlF5bHR0VQ==").decode()
+          default_chat_id = "8047188903"
+          default_channel = "UCD8K7cu_zn2KnNOGLkOnFnw"
+
+          app_cfg["gemini_api_key"] = os.environ.get("GEMINI_API_KEY", "").strip() or default_gemini
+          app_cfg["pexels_api_keys"] = [os.environ.get("PEXELS_API_KEY", "").strip() or default_pexels]
+          app_cfg["video_source"] = "pexels"
+          app_cfg["youtube_channel_id"] = default_channel
+
+          tg_cfg = cfg.setdefault("telegram", {})
+          tg_cfg["bot_token"] = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip() or default_bot_token
+          tg_cfg["chat_id"] = os.environ.get("TELEGRAM_CHAT_ID", "").strip() or default_chat_id
+
+          ui_cfg = cfg.setdefault("ui", {})
+          ui_cfg["voice_name"] = "gemini:Puck-Upbeat"
+          ui_cfg["font_name"] = "Nirmala.ttc"
+          ui_cfg["text_fore_color"] = "#FFFF00"
+          ui_cfg["stroke_color"] = "#000000"
+          ui_cfg["stroke_width"] = 3
+
+          with open("config.toml", "w") as f:
+              toml.dump(cfg, f)
+          print("config.toml successfully loaded.")
+          '
+
+      - name: Run Autonomous Video Production Pipeline
+        run: |
+          CUSTOM_TOPIC="${{ github.event.inputs.custom_topic }}"
+          if [ -n "$CUSTOM_TOPIC" ]; then
+            python auto_pipeline.py --subject "$CUSTOM_TOPIC"
+          else
+            python auto_pipeline.py --analyze-channel
+          fi

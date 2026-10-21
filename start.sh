@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+export ENABLE_CLOUD_RENDERER="true"
+export PYTHONUNBUFFERED="1"
+
 # If config.toml is missing, generate one from config.example.toml
 if [ ! -f "config.toml" ] && [ -f "config.example.toml" ]; then
     echo "Creating config.toml from template..."

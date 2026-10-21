@@ -196,10 +196,13 @@ def run_pipeline(
         "--video-source", "pexels",
         "--bgm-type", "random",
         "--bgm-volume", "0.18",
-        "--n-threads", "2" if os.environ.get("RENDER") else "4"
+        "--n-threads", "1"
     ]
 
+    import gc
+    gc.collect()
     result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    gc.collect()
     if result.returncode != 0:
         logger.error(f"Video render failed with code {result.returncode}!")
         output_combined = ((result.stderr or "") + "\n" + (result.stdout or "")).strip()

@@ -171,64 +171,66 @@ def daily_autopilot_scheduler():
             today_str = now_ist.strftime("%Y-%m-%d")
             chour = now_ist.hour
 
-            # 100% Cloud Autopilot (Gentle low-memory rendering with n_threads=1)
-            # Slot 1: Starts in advance at 11:00 AM IST (Target publish: 1:00 PM IST)
-            slot1_key = f"{today_str}_slot1_11"
-            if 11 <= chour < 16 and not is_autopilot_slot_completed(slot1_key) and not is_generating:
-                mark_autopilot_slot_completed(slot1_key)
-                logger.info(f"🚀 DAILY 2X AUTOPILOT TRIGGERED FOR Slot 1 (11:00 AM IST) on {today_str}!")
-                owner_chat_id = str(config.telegram.get("chat_id", "8047188903"))
-                if owner_chat_id:
-                    send_reply(
-                        owner_chat_id,
-                        f"⏰ <b>DAILY 2X CLOUD AUTOPILOT TRIGGERED! (Slot 1 - 11:00 AM IST)</b> 🎬\n\n"
-                        f"Channel: <b>Jayant Talks</b>\n"
-                        f"• Step 1: Picking viral high-retention topic...\n"
-                        f"• Step 2: Gentle low-memory cloud rendering (n_threads=1)...\n"
-                        f"• Step 3: Direct publishing to YouTube & Telegram...\n\n"
-                        f"<i>100% Hands-Free Cloud Autopilot — Video ready hote hi link yahan bhejta hu!</i>"
-                    )
+            # 100% Cloud Autopilot (Heavy video rendering runs on GitHub Actions 7GB Cloud Runner)
+            # Render only runs local pipeline if explicitly enabled via ENABLE_CLOUD_RENDERER=true
+            if enable_cloud_render:
+                # Slot 1: Starts in advance at 11:00 AM IST (Target publish: 1:00 PM IST)
+                slot1_key = f"{today_str}_slot1_11"
+                if 11 <= chour < 16 and not is_autopilot_slot_completed(slot1_key) and not is_generating:
+                    mark_autopilot_slot_completed(slot1_key)
+                    logger.info(f"🚀 DAILY 2X AUTOPILOT TRIGGERED FOR Slot 1 (11:00 AM IST) on {today_str}!")
+                    owner_chat_id = str(config.telegram.get("chat_id", "8047188903"))
+                    if owner_chat_id:
+                        send_reply(
+                            owner_chat_id,
+                            f"⏰ <b>DAILY 2X CLOUD AUTOPILOT TRIGGERED! (Slot 1 - 11:00 AM IST)</b> 🎬\n\n"
+                            f"Channel: <b>Jayant Talks</b>\n"
+                            f"• Step 1: Picking viral high-retention topic...\n"
+                            f"• Step 2: Cloud rendering...\n"
+                            f"• Step 3: Direct publishing to YouTube & Telegram...\n\n"
+                            f"<i>100% Hands-Free Cloud Autopilot — Video ready hote hi link yahan bhejta hu!</i>"
+                        )
 
-                def autopilot_worker_1():
-                    global is_generating
-                    is_generating = True
-                    try:
-                        auto_pipeline.run_pipeline(analyze_channel=True)
-                    except Exception as err:
-                        logger.error(f"Autopilot pipeline error: {err}")
-                    finally:
-                        is_generating = False
+                    def autopilot_worker_1():
+                        global is_generating
+                        is_generating = True
+                        try:
+                            auto_pipeline.run_pipeline(analyze_channel=True)
+                        except Exception as err:
+                            logger.error(f"Autopilot pipeline error: {err}")
+                        finally:
+                            is_generating = False
 
-                threading.Thread(target=autopilot_worker_1, daemon=True).start()
+                    threading.Thread(target=autopilot_worker_1, daemon=True).start()
 
-            # Slot 2: Starts in advance at 4:00 PM IST (16:00 IST) (Target publish: 6:00 PM IST)
-            slot2_key = f"{today_str}_slot2_16"
-            if chour >= 16 and not is_autopilot_slot_completed(slot2_key) and not is_generating:
-                mark_autopilot_slot_completed(slot2_key)
-                logger.info(f"🚀 DAILY 2X AUTOPILOT TRIGGERED FOR Slot 2 (4:00 PM IST) on {today_str}!")
-                owner_chat_id = str(config.telegram.get("chat_id", "8047188903"))
-                if owner_chat_id:
-                    send_reply(
-                        owner_chat_id,
-                        f"⏰ <b>DAILY 2X CLOUD AUTOPILOT TRIGGERED! (Slot 2 - 4:00 PM IST)</b> 🎬\n\n"
-                        f"Channel: <b>Jayant Talks</b>\n"
-                        f"• Step 1: Picking viral high-retention topic...\n"
-                        f"• Step 2: Gentle low-memory cloud rendering (n_threads=1)...\n"
-                        f"• Step 3: Direct publishing to YouTube & Telegram...\n\n"
-                        f"<i>100% Hands-Free Cloud Autopilot — Video ready hote hi link yahan bhejta hu!</i>"
-                    )
+                # Slot 2: Starts in advance at 4:00 PM IST (16:00 IST) (Target publish: 6:00 PM IST)
+                slot2_key = f"{today_str}_slot2_16"
+                if chour >= 16 and not is_autopilot_slot_completed(slot2_key) and not is_generating:
+                    mark_autopilot_slot_completed(slot2_key)
+                    logger.info(f"🚀 DAILY 2X AUTOPILOT TRIGGERED FOR Slot 2 (4:00 PM IST) on {today_str}!")
+                    owner_chat_id = str(config.telegram.get("chat_id", "8047188903"))
+                    if owner_chat_id:
+                        send_reply(
+                            owner_chat_id,
+                            f"⏰ <b>DAILY 2X CLOUD AUTOPILOT TRIGGERED! (Slot 2 - 4:00 PM IST)</b> 🎬\n\n"
+                            f"Channel: <b>Jayant Talks</b>\n"
+                            f"• Step 1: Picking viral high-retention topic...\n"
+                            f"• Step 2: Cloud rendering...\n"
+                            f"• Step 3: Direct publishing to YouTube & Telegram...\n\n"
+                            f"<i>100% Hands-Free Cloud Autopilot — Video ready hote hi link yahan bhejta hu!</i>"
+                        )
 
-                def autopilot_worker_2():
-                    global is_generating
-                    is_generating = True
-                    try:
-                        auto_pipeline.run_pipeline(analyze_channel=True)
-                    except Exception as err:
-                        logger.error(f"Autopilot pipeline error: {err}")
-                    finally:
-                        is_generating = False
+                    def autopilot_worker_2():
+                        global is_generating
+                        is_generating = True
+                        try:
+                            auto_pipeline.run_pipeline(analyze_channel=True)
+                        except Exception as err:
+                            logger.error(f"Autopilot pipeline error: {err}")
+                        finally:
+                            is_generating = False
 
-                threading.Thread(target=autopilot_worker_2, daemon=True).start()
+                    threading.Thread(target=autopilot_worker_2, daemon=True).start()
 
             # Daily 9:00 PM Growth Report (Window: 21:00 to 23:59 IST)
             if chour >= 21 and not is_growth_report_completed(today_str):

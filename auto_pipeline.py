@@ -46,42 +46,47 @@ from app.utils import utils
 
 
 CURATED_VIRAL_NICHES = [
-    "3 Dark Psychology Secrets That Command Instant Respect",
     "3 Body Language Signs Someone Is Lying Right To Your Face",
-    "Why High Value People Speak Less (The Power of Silence)",
-    "3 Psychological Tricks To Read Anyone's Mind In 3 Seconds",
     "3 Signs Someone Is Secretly Jealous Of Your Success",
-    "How To Stop Being Ignored In A Group Conversation",
+    "How To Stop Being Ignored In Any Conversation",
+    "3 Psychological Tricks To Read Anyone's Mind In 3 Seconds",
+    "The Power of Silence in an Argument (Why Talking Less Wins)",
     "The 72-Hour Wealth Rule Used By The Top 1 Percent",
-    "3 Dangerous Habits That Destroy Your Confidence Instantly",
+    "3 Hidden Signs A Friend Is Secretly Your Enemy",
+    "Why You Should Never Reveal Your Next Move In Life",
+    "How To Spot A Manipulator Before They Trap You",
+    "3 Dark Psychological Hacks To Stay Emotionally Untouchable"
 ]
 
 
 def pick_topic(custom_topic: str = "", analyze_channel: bool = False) -> str:
-    """Select the best viral topic for today."""
+    """Select the best viral topic for today with strict anti-repetition rules."""
     if custom_topic:
         return custom_topic
 
     if analyze_channel:
         try:
             analyzer = YouTubeAnalyzer()
-            # Analyze recent patterns and pick recommended topic
             analysis = analyzer.analyze_channel([], sample_comments=[
                 "Bhai psychology tricks par aur banao",
                 "How to read body language please",
-                "People ignore me, make a video on respect"
+                "Signs of fake friends and jealousy please"
             ])
             recs = analysis.get("recommended_next_topics", [])
-            if recs and recs[0].get("topic"):
-                logger.info(f"Topic chosen from AI Channel Analysis: {recs[0]['topic']}")
-                return recs[0]["topic"]
+            for r in recs:
+                top = r.get("topic", "").strip()
+                if top and "respect" not in top.lower():
+                    logger.info(f"Topic chosen from AI Channel Analysis: {top}")
+                    return top
         except Exception as e:
             logger.warning(f"Failed to fetch AI analysis topic: {e}")
 
-    # Rotate topic based on day of year
-    day_idx = datetime.datetime.now().timetuple().tm_yday % len(CURATED_VIRAL_NICHES)
+    # Rotate topic based on hour + day of year for high variance
+    now = datetime.datetime.now()
+    seed = (now.timetuple().tm_yday * 2) + (1 if now.hour >= 15 else 0)
+    day_idx = seed % len(CURATED_VIRAL_NICHES)
     chosen = CURATED_VIRAL_NICHES[day_idx]
-    logger.info(f"Rotating curated viral topic: {chosen}")
+    logger.info(f"Rotating high-CTR viral topic: {chosen}")
     return chosen
 
 

@@ -4,8 +4,8 @@ on:
   schedule:
     # Slot 1: Starts at 11:00 AM IST (05:30 UTC) - Target Publish 1:00 PM IST
     - cron: '30 5 * * *'
-    # Slot 2: Starts at 4:00 PM IST (10:30 UTC) - Target Publish 6:00 PM IST
-    - cron: '30 10 * * *'
+    # Slot 2: Starts at 7:00 PM IST (13:30 UTC) - Peak Evening Traffic
+    - cron: '30 13 * * *'
   workflow_dispatch:
     inputs:
       custom_topic:

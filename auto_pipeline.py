@@ -204,7 +204,7 @@ def run_pipeline(
         "--subtitle-position", "custom",
         "--custom-position", "72",
         "--subtitle-animation", "pop_spring",
-        "--video-clip-duration", "3",
+        "--video-clip-duration", "2",
         "--video-source", "pexels",
         "--bgm-type", "random",
         "--bgm-volume", "0.18",
